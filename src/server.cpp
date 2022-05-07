@@ -3,8 +3,8 @@
 using namespace std;
 // Основной конструктор класса, в качестве параметров принимает ip, port, и максимальную длину очереди ожидающих соединений.
 Server::Server(const char *addr, int port,string pass, int backlog) :
-m_address(),m_sock_reuse(1),m_sock(),
-m_backlog(backlog),m_kqueue(),m_event_subs(),m_event_list(),m_receive_buf(),serverpassword(pass),m_sock_state()
+m_address(),m_sock_reuse(1),m_sock(),m_backlog(backlog),m_kqueue(),m_event_subs(),
+m_event_list(),m_receive_buf(),serverpassword(pass),m_sock_state()
 {
     // Заполняю структуру значениями ip, port и создаю сокет.
 	m_address.sin_family = AF_INET;

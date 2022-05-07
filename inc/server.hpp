@@ -54,6 +54,7 @@ class Server
     char m_receive_buf[1024];
     list<string> users;
     list<struct kevent> fds;
+    list<struct kevent> auth;
     string sockstr;
     string serverpassword;
     enum SocketState 

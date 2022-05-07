@@ -66,13 +66,32 @@ int Server::checkClient(string str)
 int Server::cmdNICK(string &str, int n, struct kevent &event)//доб. замену ника
 {
     string nick(str.substr(n));
+    string oldnick = "";
     nick = (nick.substr(nick.find_first_of(' ') + 1));
     size_t found = nick.find('\n');
+    size_t f = str.find(':') +1;
     if (found > 0)
     {
         for (unsigned long p = 0;p<nick.size();p++)
             if (nick[p] == '\n'|| nick[p] == '\r')
                 nick.erase(p);
+    }
+    if (f != string::npos && f < (size_t)n && str.find("USER") == string::npos)
+    {
+        for (size_t i =f;str[i] != ' ';i++)
+            oldnick += str[i];
+        printf("oldnick: %s\n", oldnick.c_str());
+        for (list<string>::iterator i = users.begin();i != users.end();i++)
+        {
+            string buff = *i;
+            if (buff == oldnick)
+            {
+                i->erase(0);
+                *i = nick;
+                printf("i: %s\n", i->c_str());
+            }
+        }
+        return 0;
     }
     // if (nick.length() < 1)
     //     ERR(":No nickname given", strerror(errno));//431???
@@ -111,6 +130,20 @@ void Server::cmdQUIT(struct kevent &event)
                 fds.erase(it);
             it2 = users.begin();
             it = fds.begin();
+        }
+    }
+    for (list<struct kevent>::iterator i = auth.begin();i != auth.end();i++)
+    {
+        if (i->ident == event.ident)
+        {
+            if (auth.size() == 1)
+            {
+                auth.clear();
+                break;
+            }
+            else
+                auth.erase(i);
+            i = auth.begin();
         }
     }
     onClientDisconnect(event);
@@ -164,7 +197,6 @@ void Server::cmdPRIVMSG(string &str, struct kevent &e)
         {
             for (size_t n = 0;n<strlen(str.c_str());n++)
                 nick2 += str[n];
-            // nick2 = str;
         }    
     }
     string *str2 = new string(":"+nick2+"! PRIVMSG "+nick+" "+ message + "\r\n");
@@ -175,9 +207,9 @@ int Server::cmdPASS(string &str, struct kevent &e)
     string pass = str.substr(str.find_first_of(':') + 1);
     size_t found = pass.find('\n');
     size_t found2 = pass.find('\r');
-    if (found > 0)
+    if (found != string::npos)
         pass.erase(found);
-    if (found2 > 0)
+    if (found2 != string::npos)
         pass.erase(found2);
     printf("pass: %s\n", pass.c_str());
     printf("pass len: %lu\n", strlen(pass.c_str()));
@@ -193,19 +225,33 @@ int Server::cmdPASS(string &str, struct kevent &e)
 int Server::parsBuffer(string &str, struct kevent &event)
 {
     int in = str.find("NICK");
-    int ret = 0;
+    int ret = 0;int check = 0;
     if (str.find("PASS") != string::npos)
     {
-        ret = cmdPASS(str, event);
         printf("ret: %d\n", ret);
+        ret = cmdPASS(str, event);
+        if (ret == 0)
+            auth.push_back(event);
+        printf("ret: %d\n", ret);
+    }
+    else
+    {
+        for (list<struct kevent>::iterator i = auth.begin();i != auth.end();i++)
+            if (i->ident == event.ident)
+                check = 1;
+        if (check == 0)
+        {
+            onClientDisconnect(event);
+            return ret;
+        }
     }
     if (ret == 1)
         return ret;
-    if ((str.find("USER") != string::npos) && (str.find("PASS") == string::npos))
-    {
-        onClientDisconnect(event);
-        return 1;
-    }
+    // if ((str.find("USER") != string::npos) && (str.find("PASS") == string::npos))
+    // {
+    //     onClientDisconnect(event);
+    //     return 1;
+    // }
     if (str.find("NICK") != string::npos)
     {
         ret = cmdNICK(str, in, event);
@@ -242,6 +288,8 @@ int Server::parsBuffer(string &str, struct kevent &event)
             printf("%s: %lu\n", i->c_str(), strlen(i->c_str()));
         for (list<struct kevent>::iterator i = fds.begin();i!=fds.end();i++)
             printf("%lu\n", i->ident);
+        for (list<struct kevent>::iterator i = auth.begin();i!=auth.end();i++)
+            printf("auth: %lu\n", i->ident);
     }
     return ret;
 }
