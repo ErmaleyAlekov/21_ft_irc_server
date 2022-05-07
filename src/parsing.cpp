@@ -222,17 +222,50 @@ int Server::cmdPASS(string &str, struct kevent &e)
         return 1;
     }
 }
+void Server::cmdWHOIS(string &str, struct kevent &e)
+{
+    string nick = str.substr(str.find_first_of(' ') + 1);
+    string nick2 = "";size_t whofd = 0;int check = 0;
+    size_t found = nick.find('\n');
+    size_t found2 = nick.find('\r');
+    list<string>::iterator it = users.begin();
+    if (found != string::npos)
+        nick.erase(found);
+    if (found2 != string::npos)
+        nick.erase(found2);
+    for (list<string>::iterator i2 = users.begin();i2!=users.end();i2++)
+    {
+        string n = *i2;
+        if (n == nick)
+            check = 1;
+    }
+    if (check == 0)
+        return;
+    for (list<struct kevent>::iterator i = fds.begin();i!=fds.end();i++)
+    {
+        if (i->ident == e.ident)
+            break;
+        whofd++;
+    }
+    for (size_t i = 0;i<=whofd;i++,it++)
+        if (i == whofd)
+            nick2 += *it;
+    sendAnswer(e, ":server 311 " +nick2+" "+nick+" :Adium User\r\n");
+    sendAnswer(e, ":server 319 " +nick2+" "+nick+" :\r\n");
+    sendAnswer(e, ":server 312 " +nick2+" "+nick+" :server IRC\r\n");
+    sendAnswer(e, ":server 317 " +nick2+" "+nick+" 1 1651936678 :seconds idle\r\n");
+    sendAnswer(e, ":server 318 " +nick2+" "+nick+" :End of /WHOIS list\r\n");
+}
 int Server::parsBuffer(string &str, struct kevent &event)
 {
     int in = str.find("NICK");
     int ret = 0;int check = 0;
     if (str.find("PASS") != string::npos)
     {
-        printf("ret: %d\n", ret);
         ret = cmdPASS(str, event);
         if (ret == 0)
             auth.push_back(event);
-        printf("ret: %d\n", ret);
+        // printf("ret: %d\n", ret);
     }
     else
     {
@@ -241,17 +274,13 @@ int Server::parsBuffer(string &str, struct kevent &event)
                 check = 1;
         if (check == 0)
         {
+            sendAnswer(event, ":server 451 :You have not registered\r\n");
             onClientDisconnect(event);
             return ret;
         }
     }
     if (ret == 1)
         return ret;
-    // if ((str.find("USER") != string::npos) && (str.find("PASS") == string::npos))
-    // {
-    //     onClientDisconnect(event);
-    //     return 1;
-    // }
     if (str.find("NICK") != string::npos)
     {
         ret = cmdNICK(str, in, event);
@@ -280,6 +309,8 @@ int Server::parsBuffer(string &str, struct kevent &event)
         cmdQUIT(event);
     if (Find(str,"PRIVMSG") == 0)
         cmdPRIVMSG(str, event);
+    if (Find(str,"WHOIS") == 0)
+        cmdWHOIS(str,event);
     if (Find(str,"LIST") == 0)
     {
         printf("users: %lu\n", users.size());

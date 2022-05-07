@@ -38,6 +38,7 @@ class Server
     void cmdQUIT(struct kevent &event);
     void cmdPRIVMSG(string &str, struct kevent &e);
     int cmdPASS(string &str, struct kevent &e);
+    void cmdWHOIS(string &str, struct kevent &e);
   private:
     int listen();
     int bind();
