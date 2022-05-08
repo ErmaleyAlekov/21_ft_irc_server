@@ -19,6 +19,30 @@ using namespace std;
 #define ERROR ":server 433 Nickname is already in use\r\n"
 #define SUCCESSCONNECT ":server 376 "
 
+class chatroom
+{
+  public:
+    list<string> users;
+    string pass;
+    string name;
+    chatroom(string Name,string Pass) {name = Name;pass = Pass;}
+    ~chatroom() {}
+    void addUser(string nik) {users.push_back(nik);}
+    void printUsers()
+    {
+      for (list<string>::iterator it = users.begin();it != users.end();it++)
+        cout<< *it<< endl;
+    }
+    void deleteUser(string nik) 
+    {
+      for (list<string>::iterator it = users.begin();it != users.end();it++)
+      {
+        string n = *it;
+        if (n == nik)
+          users.erase(it);
+      }
+    }
+};
 class Server
 {
   public:
@@ -39,6 +63,8 @@ class Server
     void cmdPRIVMSG(string &str, struct kevent &e);
     int cmdPASS(string &str, struct kevent &e);
     void cmdWHOIS(string &str, struct kevent &e);
+    void cmdISON(string &str, struct kevent &e);
+    void cmdNOTICE(string &str, struct kevent &e);
   private:
     int listen();
     int bind();
@@ -56,6 +82,7 @@ class Server
     list<string> users;
     list<struct kevent> fds;
     list<struct kevent> auth;
+    list<chatroom> rooms;
     string sockstr;
     string serverpassword;
     enum SocketState 

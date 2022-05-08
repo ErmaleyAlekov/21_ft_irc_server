@@ -70,7 +70,7 @@ int Server::cmdNICK(string &str, int n, struct kevent &event)//доб. заме�
     nick = (nick.substr(nick.find_first_of(' ') + 1));
     size_t found = nick.find('\n');
     size_t f = str.find(':') +1;
-    if (found > 0)
+    if (found != string::npos)
     {
         for (unsigned long p = 0;p<nick.size();p++)
             if (nick[p] == '\n'|| nick[p] == '\r')
@@ -192,7 +192,7 @@ void Server::cmdPRIVMSG(string &str, struct kevent &e)
     for (unsigned long k = 0;k<users.size();it++,k++)
     {
         string str = *it;
-        printf("str2: %s\n", str.c_str());
+        // printf("str2: %s\n", str.c_str());
         if (k==a)
         {
             for (size_t n = 0;n<strlen(str.c_str());n++)
@@ -200,6 +200,60 @@ void Server::cmdPRIVMSG(string &str, struct kevent &e)
         }    
     }
     string *str2 = new string(":"+nick2+"! PRIVMSG "+nick+" "+ message + "\r\n");
+    sendAnswer(event, str2[0]);
+}
+void Server::cmdNOTICE(string &str, struct kevent &e)
+{
+    int space = str.find(' ');
+    int m = str.find(':');
+    string nick = "";
+    string nick2 = "";
+    string message = "";
+    list<struct kevent>::iterator it2 = fds.begin();
+    list<string>::iterator it = users.begin();
+    for (int i = space + 1;str[i] != ' ';i++)
+    {
+        nick += str[i];
+    }
+    for (unsigned long i = m;i<str.size();i++)
+        message+=str[i];
+    int j = 0;
+    for (list<string>::iterator i = users.begin();i != users.end();i++)
+    {
+        string str = *i;
+        size_t check = 0;
+        if (strlen(str.c_str()) == strlen(nick.c_str()))
+            for (size_t g=0;g<strlen(str.c_str());g++)
+                if (str[g] == nick[g])
+                    check++;
+        if (check == strlen(str.c_str()))
+            break;
+        j++;
+    }
+    struct kevent event;
+    for (int k = 0;k<=j;it2++,k++)
+    {
+        if (k==j)
+            event = *it2;
+    }
+    unsigned long a = 0;
+    for (list<struct kevent>::iterator i = fds.begin();i != fds.end();i++)
+    {
+        if (i->ident == e.ident)
+            break;
+        a++;
+    }
+    for (unsigned long k = 0;k<users.size();it++,k++)
+    {
+        string str = *it;
+        printf("str2: %s\n", str.c_str());
+        if (k==a)
+        {
+            for (size_t n = 0;n<strlen(str.c_str());n++)
+                nick2 += str[n];
+        }    
+    }
+    string *str2 = new string(":"+nick2+"! NOTICE "+nick+" "+ message + "\r\n");
     sendAnswer(event, str2[0]);
 }
 int Server::cmdPASS(string &str, struct kevent &e)
@@ -225,7 +279,7 @@ int Server::cmdPASS(string &str, struct kevent &e)
 void Server::cmdWHOIS(string &str, struct kevent &e)
 {
     string nick = str.substr(str.find_first_of(' ') + 1);
-    string nick2 = "";size_t whofd = 0;int check = 0;
+    string nick2 = "";size_t fd = 0;int check = 0;
     size_t found = nick.find('\n');
     size_t found2 = nick.find('\r');
     list<string>::iterator it = users.begin();
@@ -245,16 +299,50 @@ void Server::cmdWHOIS(string &str, struct kevent &e)
     {
         if (i->ident == e.ident)
             break;
-        whofd++;
+        fd++;
     }
-    for (size_t i = 0;i<=whofd;i++,it++)
-        if (i == whofd)
+    for (size_t i = 0;i<=fd;i++,it++)
+        if (i == fd)
             nick2 += *it;
     sendAnswer(e, ":server 311 " +nick2+" "+nick+" :Adium User\r\n");
     sendAnswer(e, ":server 319 " +nick2+" "+nick+" :\r\n");
     sendAnswer(e, ":server 312 " +nick2+" "+nick+" :server IRC\r\n");
     sendAnswer(e, ":server 317 " +nick2+" "+nick+" 1 1651936678 :seconds idle\r\n");
     sendAnswer(e, ":server 318 " +nick2+" "+nick+" :End of /WHOIS list\r\n");
+}
+void Server::cmdISON(string &str, struct kevent &e)
+{
+    string nick = str.substr(str.find_first_of(' ') + 1);
+    size_t fd = 0;
+    string nick2 = "";int check = 0;
+    list<string>::iterator it = users.begin();
+    for (unsigned long p = 0;p<nick.size();p++)
+        if (nick[p] == '\n'|| nick[p] == '\r')
+            nick.erase(p);
+    // cout << nick << endl;
+    for (list<string>::iterator i2 = users.begin();i2!=users.end();i2++)
+    {
+        string n = *i2;
+        if (n == nick)
+            check = 1;
+    }
+    for (list<struct kevent>::iterator i = fds.begin();i!=fds.end();i++)
+    {
+        if (i->ident == e.ident)
+            break;
+        fd++;
+    }
+    if (fd <= users.size())
+    {
+        for (size_t i = 0;i<=fd;i++,it++)
+            if (i == fd)
+                nick2 += *it;
+    }
+    // cout << nick2 << endl;
+    if (check == 1)
+        sendAnswer(e, ":server 303 "+nick2+" :"+nick+"\r\n");
+    else
+        sendAnswer(e, ":server 303 "+nick2+" :\r\n");
 }
 int Server::parsBuffer(string &str, struct kevent &event)
 {
@@ -308,7 +396,34 @@ int Server::parsBuffer(string &str, struct kevent &event)
     if (Find(str, "QUIT") == 0)
         cmdQUIT(event);
     if (Find(str,"PRIVMSG") == 0)
-        cmdPRIVMSG(str, event);
+    {
+        vector<string> nicks;int i = 0;string message = str.substr(str.find_first_of(':'));
+        string buff = str.substr(str.find_first_of(' ') + 1);string buff2 = "";
+        // cout << buff << endl;
+        for (int j = 0;buff[j] != ':';j++)
+        {
+            if (buff[j] == ','|| buff[j] == ' ')
+            {
+                nicks.push_back(buff2);
+                buff2 = "";
+                i++;
+            }
+            else
+                buff2 += buff[j];
+            
+        }
+        // cout << nicks.size() << endl;
+        for (int d = 0;d<=i;d++)
+        {
+            string a = "PRIVMSG "+nicks[d]+" "+message;
+            cmdPRIVMSG(a, event);
+        }
+        
+    }
+    if (Find(str,"NOTICE") == 0)
+        cmdNOTICE(str,event);
+    if (Find(str, "ISON") == 0)
+        cmdISON(str,event);
     if (Find(str,"WHOIS") == 0)
         cmdWHOIS(str,event);
     if (Find(str,"LIST") == 0)
