@@ -75,7 +75,20 @@ int Server::initServer()
 	}
 	return err;
 }
-
+void sig_main(int sig)
+{
+	int pid = fork();
+	write(1,"\n",1);
+	if (sig == SIGINT)
+		kill(pid,-1);
+}
+void Server::signals()
+{
+	signal(SIGINT, sig_main);
+    signal(SIGTERM, sig_main);
+    signal(SIGQUIT, sig_main);
+    signal(SIGTSTP, sig_main);
+}
 void Server::startServer()
 {
     // функция запуска сервера
@@ -88,7 +101,8 @@ void Server::startServer()
 		return;
 	}
 	while(1)
-	{ 
+	{
+		signals();
 		event_count = kevent(m_kqueue, NULL, 0, m_event_list, 32, NULL);
 		if (event_count < 1)
 		{

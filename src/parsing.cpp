@@ -253,7 +253,7 @@ void Server::cmdNOTICE(string &str, struct kevent &e)
                 nick2 += str[n];
         }    
     }
-    string *str2 = new string(":"+nick2+"! NOTICE "+nick+" "+ message + "\r\n");
+    string *str2 = new string(":"+nick2+"! NOTICE "+nick+" "+ message + "\n");
     sendAnswer(event, str2[0]);
 }
 int Server::cmdPASS(string &str, struct kevent &e)

@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 #include <list>
+#include <signal.h>
 using namespace std;
 #define ERROR ":server 433 Nickname is already in use\r\n"
 #define SUCCESSCONNECT ":server 376 "
@@ -65,6 +66,8 @@ class Server
     void cmdWHOIS(string &str, struct kevent &e);
     void cmdISON(string &str, struct kevent &e);
     void cmdNOTICE(string &str, struct kevent &e);
+    void signals();
+    // void sig_main(int sig);
   private:
     int listen();
     int bind();
