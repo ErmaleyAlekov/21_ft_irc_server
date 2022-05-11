@@ -59,7 +59,7 @@ class Server
     int checkClient(string str);
     int Find(string str);
     int Find(string &str, string str2);
-    void sendAnswer(struct kevent &event, string str);
+    ssize_t sendAnswer(struct kevent &event, string str);
     void cmdQUIT(struct kevent &event);
     void cmdPRIVMSG(string &str, struct kevent &e);
     int cmdPASS(string &str, struct kevent &e);
@@ -67,7 +67,7 @@ class Server
     void cmdISON(string &str, struct kevent &e);
     void cmdNOTICE(string &str, struct kevent &e);
     void signals();
-    // void sig_main(int sig);
+    void checkConnects();
   private:
     int listen();
     int bind();

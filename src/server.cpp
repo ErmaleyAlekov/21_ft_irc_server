@@ -1,5 +1,7 @@
 #include "server.hpp"
 #include <iostream>
+#include <time.h>
+#include <thread>
 using namespace std;
 // Основной конструктор класса, в качестве параметров принимает ip, port, и максимальную длину очереди ожидающих соединений.
 Server::Server(const char *addr, int port,string pass, int backlog) :
@@ -79,8 +81,11 @@ void sig_main(int sig)
 {
 	int pid = fork();
 	write(1,"\n",1);
-	if (sig == SIGINT)
+	if (sig == SIGINT || sig == SIGTERM || sig == SIGQUIT || sig == SIGTSTP)
+	{
 		kill(pid,-1);
+		exit(-1);
+	}
 }
 void Server::signals()
 {
@@ -89,6 +94,20 @@ void Server::signals()
     signal(SIGQUIT, sig_main);
     signal(SIGTSTP, sig_main);
 }
+
+void Server::checkConnects()
+{
+	for (list<struct kevent>::iterator it = auth.begin();it!=auth.end();it++)
+	{
+		unsigned char buf;
+		if (recv(it->ident, &buf, 1, MSG_PEEK | MSG_DONTWAIT) == 0)
+		{
+			printf("Disconnect detected!\n");
+			cmdQUIT(*it);
+		}
+	}
+}
+
 void Server::startServer()
 {
     // функция запуска сервера
@@ -100,9 +119,11 @@ void Server::startServer()
 		ERR("aborting run loop");
 		return;
 	}
+
 	while(1)
 	{
 		signals();
+		checkConnects();
 		event_count = kevent(m_kqueue, NULL, 0, m_event_list, 32, NULL);
 		if (event_count < 1)
 		{
@@ -136,6 +157,7 @@ int Server::onClientConnect(struct kevent& event)
     Заметим, что флаги файловых дескрипторов (те, что можно установить с помощью параметра F_SETFL функции fcntl, 
     типа неблокированного состояния или асинхронного ввода-вывода) не наследуются новым файловым дескриптором после accept.*/
 	int client_sock = ::accept(event.ident, NULL, NULL);
+	printf("NEW CONNECTION!\n");
 	DEBUG("[0x%016" PRIXPTR "] client connect", (unsigned long) client_sock);
 	if (client_sock < 0)
 	{
@@ -206,7 +228,8 @@ int Server::close()
 
 Server::~Server() {if (m_sock_state == LISTENING) close();}
 
-void Server::sendAnswer(struct kevent &event, string str)
+ssize_t Server::sendAnswer(struct kevent &event, string str)
 {
-	send(event.ident, str.c_str(), str.size(), 0);
+	ssize_t ret = send(event.ident, str.c_str(), str.size(), 0);
+	return ret;
 }

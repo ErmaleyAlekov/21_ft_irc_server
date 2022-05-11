@@ -353,7 +353,7 @@ int Server::parsBuffer(string &str, struct kevent &event)
         ret = cmdPASS(str, event);
         if (ret == 0)
             auth.push_back(event);
-        // printf("ret: %d\n", ret);
+        printf("ret: %d\n", ret);
     }
     else
     {
@@ -362,6 +362,7 @@ int Server::parsBuffer(string &str, struct kevent &event)
                 check = 1;
         if (check == 0)
         {
+            printf("chachacha\n");
             sendAnswer(event, ":server 451 :You have not registered\r\n");
             onClientDisconnect(event);
             return ret;
