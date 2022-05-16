@@ -212,7 +212,7 @@ int Server::cmdNICK(string &str, int n, struct kevent &event)//доб. заме�
     }
     // if (nick.length() < 1)
     //     ERR(":No nickname given", strerror(errno));//431???
-    if (checkClient(nick) == 0)
+    if (checkClient(nick) == 0 && nick != "marussia")
     {
         printf("check: %s\n", nick.c_str());
         users.push_back(nick);
@@ -306,6 +306,10 @@ void Server::cmdPRIVMSG(string &str, struct kevent &e)
             delete str2;
         }    
     }
+    else if (nick == "marussia")
+        marussia(nick2,message,e);
+    else if (nick2 == "")
+        sendAnswer(e, "You are not registered!\n");
     else
     {
         string *str2 = new string(":"+nick2+"! PRIVMSG "+nick+" "+ message + "\r\n");

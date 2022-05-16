@@ -208,3 +208,10 @@ struct kevent& Server::findFdByNick(string Nick)
     }
     return *it2;
 }
+int Server::checkUserNick(string &name)
+{
+    for (list<string>::iterator it = users.begin();it != users.end();it++)
+        if (*it == name)
+            return 0;
+    return -1;
+}

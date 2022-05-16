@@ -99,6 +99,8 @@ class Server
     string findNickByFd(struct kevent &event);
     chatroom findRoomByName(string Name);
     struct kevent& findFdByNick(string Nick);
+    void marussia(string Nick,string Message,struct kevent &event);
+    int checkUserNick(string &name);
   private:
     int listen();
     int bind();
