@@ -6,7 +6,7 @@ O = obj/
 CC = c++
 COMP = $(CC) $(CFLAGS) $(SRC) $(HEADER) -o $(NAME)
 COMPO = $(CC) $(CFLAGS) -c $< $(HEADER) -o $@
-SRC =  $Smain.cpp $Sserver.cpp $Sparsing.cpp
+SRC =  $Smain.cpp $Sserver.cpp $Sparsing.cpp $Sutils.cpp
 OBJS = $(SRC:$S%.cpp=$O%.o)
 RED			=	\033[1;31m
 GRN			=	\033[1;32m

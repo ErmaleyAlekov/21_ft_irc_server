@@ -26,13 +26,31 @@ class chatroom
     list<string> users;
     string pass;
     string name;
-    chatroom(string Name,string Pass) {name = Name;pass = Pass;}
+    string topic;
+    chatroom(string Name,string Pass) {name = Name;pass = Pass;topic = "";}
     ~chatroom() {}
     void addUser(string nik) {users.push_back(nik);}
     void printUsers()
     {
       for (list<string>::iterator it = users.begin();it != users.end();it++)
         cout<< *it<< endl;
+    }
+    string getUsers()
+    {
+      string res = "";
+      list<string>::iterator it = users.begin();
+      for (size_t i =0;i <users.size();i++,it++)
+        res += *it + " ";
+      return res;
+    }
+    list<string> getListUsers() {return users;}
+    void printName()
+    {
+      cout<< name << endl;
+    }
+    void printPass()
+    {
+      cout<< pass << endl;
     }
     void deleteUser(string nik) 
     {
@@ -68,6 +86,19 @@ class Server
     void cmdNOTICE(string &str, struct kevent &e);
     void signals();
     void checkConnects();
+    void prePRIVMSG(string &str, struct kevent &event);
+    void nickAnswer(int res,struct kevent &event);
+    void cmdLIST();
+    string split(string str, char del);
+    void cmdJOIN(string &str, struct kevent &event);
+    int channelNameCheck(string str);
+    int spaceCheck(string str);
+    void chanPassNum(string chanName, string passName, struct kevent &event);
+    string addUserToChan(struct kevent &event, string ChanName);
+    void userAlreadyInChan(string chanCheck, struct kevent &event);
+    string findNickByFd(struct kevent &event);
+    chatroom findRoomByName(string Name);
+    struct kevent& findFdByNick(string Nick);
   private:
     int listen();
     int bind();
@@ -85,7 +116,7 @@ class Server
     list<string> users;
     list<struct kevent> fds;
     list<struct kevent> auth;
-    list<chatroom> rooms;
+    vector<chatroom> rooms;
     string sockstr;
     string serverpassword;
     enum SocketState 
