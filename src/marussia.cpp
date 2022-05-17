@@ -49,11 +49,13 @@ void Server::marussia(string Nick,string Message,struct kevent &event)
                 sendAnswer(*i, ":marussia! PRIVMSG "+*it+" :Вам кто-то написал: "+m2+"\r\n");
         sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :Успешно!\r\n");
     }
-    else if (m == ":timenow")
+    else if (m == ":groups")
     {
-        time_t t = time(0);
-        string time = asctime(localtime(&t));
-        sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :"+time+"\r\n");
+        string groups = "";
+        sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :groups on server: \r\n");
+        for (vector<chatroom>::iterator i = rooms.begin();i!=rooms.end();i++)
+            groups += i->name + "; ";
+        sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :"+groups+"\r\n");
     }
     else
     {
@@ -63,6 +65,6 @@ void Server::marussia(string Nick,string Message,struct kevent &event)
         sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :При команде - 'msg:сообщение:юзер', отправляю аннонимное сообщение указанному пользователю.\r\n");
         sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :При команде - '!all:сообщение', отправляю сообщение от вашего имени всем пользователям.\r\n");
         sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :При команде - '@all:сообщение', отправляю аннонимное сообщение всем пользователям.\r\n");
-        sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :При команде - 'timenow', вывожу текущее время и дату.\r\n");
+        sendAnswer(event, ":marussia! PRIVMSG "+Nick+" :При команде - 'groups', вывожу список всех групп на сервере.\r\n");
     }
 }
