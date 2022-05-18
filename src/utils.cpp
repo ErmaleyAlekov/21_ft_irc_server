@@ -120,11 +120,11 @@ void Server::chanPassNum(string chanName, string passName, struct kevent &event)
 
 string Server::addUserToChan(struct kevent &event, string ChanName)
 {
-    string userToChan = findNickByFd(event);
+    string *userToChan = findNickByFd(event);
     for (vector<chatroom>::iterator iter2 = rooms.begin(); iter2 !=rooms.end(); iter2++)
         if (iter2->name == ChanName)
-            iter2->users.push_back(userToChan);
-    return (userToChan);
+            iter2->users.push_back(userToChan[0]);
+    return (userToChan[0]);
 }
 
 void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
@@ -161,9 +161,9 @@ void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
     }
 }
 
-string Server::findNickByFd(struct kevent &e)
+string *Server::findNickByFd(struct kevent &e)
 {
-    unsigned long a = 0;string nick = "";
+    unsigned long a = 0;string *nick = new string("");
     list<string>::iterator it = users.begin();
     for (list<struct kevent>::iterator i = fds.begin();i != fds.end();i++)
     {
@@ -178,7 +178,7 @@ string Server::findNickByFd(struct kevent &e)
         if (k==a)
         {
             for (size_t n = 0;n<strlen(str.c_str());n++)
-                nick += str[n];
+                nick[0] += str[n];
         }    
     }
     return nick;
@@ -214,4 +214,53 @@ int Server::checkUserNick(string &name)
         if (*it == name)
             return 0;
     return -1;
+}
+
+vector<string> Server::split2(string &str)
+{
+    vector<string> *v = new vector<string>;
+    string *buff = new string("");
+    for (size_t i = 0;i<str.size();i++)
+    {
+        if (str[i] != ',')
+            buff[0] += str[i];
+        if (i == str.size() -1)
+        {
+            v[0].push_back(buff[0]);
+            return v[0];
+        }
+        if (str[i] == ',')
+        {
+            v[0].push_back(buff[0]);
+            buff[0] = "";
+        }
+    }
+    return v[0];
+}
+
+list<struct kevent> Server::getListFdsByListUsers(list<string> &lst)
+{
+    list<struct kevent> *res = new list<struct kevent>;int k = 0;
+    list<struct kevent>::iterator it3 = fds.begin();
+    for (list<string>::iterator it = lst.begin();it != lst.end();it++)
+    {
+        for (list<string>::iterator it2 = users.begin();it2!=users.end();it2++)
+        {
+            if (*it == *it2)
+            {
+                for (int i = 0;i <=k;it3++,i++)
+                {
+                    if (i==k)
+                    {
+                        k = 0;
+                        res[0].push_back(*it3);
+                        it3 = fds.begin();
+                        break;
+                    }
+                }             
+            }
+            k++;
+        }
+    }
+    return res[0];
 }

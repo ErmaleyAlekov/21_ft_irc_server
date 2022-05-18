@@ -119,12 +119,11 @@ void Server::startServer()
 		ERR("aborting run loop");
 		return;
 	}
-
-	while(1)
+	while (1)
 	{
 		signals();
 		checkConnects();
-		event_count = kevent(m_kqueue, NULL, 0, m_event_list, 32, NULL);
+		event_count = kevent(m_kqueue, NULL, 0, m_event_list, 1024, NULL);
 		if (event_count < 1)
 		{
 			ERR("kevent read: %s", strerror(errno));

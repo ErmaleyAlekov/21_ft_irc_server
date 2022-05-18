@@ -96,11 +96,14 @@ class Server
     void chanPassNum(string chanName, string passName, struct kevent &event);
     string addUserToChan(struct kevent &event, string ChanName);
     void userAlreadyInChan(string chanCheck, struct kevent &event);
-    string findNickByFd(struct kevent &event);
+    string *findNickByFd(struct kevent &event);
     chatroom findRoomByName(string Name);
     struct kevent& findFdByNick(string Nick);
     void marussia(string Nick,string Message,struct kevent &event);
     int checkUserNick(string &name);
+    void cmdPART(string &str, struct kevent &event);
+    vector<string> split2(string &str);
+    list<struct kevent> getListFdsByListUsers(list<string> &lst);
   private:
     int listen();
     int bind();
@@ -113,7 +116,7 @@ class Server
     int m_backlog;
     int m_kqueue;
     struct kevent m_event_subs;
-    struct kevent m_event_list[32];
+    struct kevent m_event_list[1024];
     char m_receive_buf[1024];
     list<string> users;
     list<struct kevent> fds;
