@@ -30,7 +30,8 @@ void Server::cmdJOIN(string &str, struct kevent &event) //а если неско
                 return ;
             } 
             if (spaceCheck(wherefind) > 0 && spaceCheck(wherefind) < 2)
-                passName = wherefind.substr(wherefind.find(' ') + 1);//исправлено - не работает корректно если ввести только одно слово(имя канала) 
+                passName = wherefind.substr(wherefind.find(' ') + 1);//исправлено - не работает корректно если ввести только одно слово(имя канала)
+            passName = split(passName,'\n');passName = split(passName,'\r');
             cout << wherefind << " - wherefind name" << endl;
             cout << chanName << " - channel name" << endl;
             cout << passName << " - pass name" << endl;
@@ -46,6 +47,11 @@ void Server::cmdJOIN(string &str, struct kevent &event) //а если неско
                     {
                         if(iter2->name == chanCheck)//проверка, если уже есть такой канал
                         {
+                            if (iter2->pass != passName)
+                            {
+                                sendAnswer(event, ":server 403 "+chanName+ ":Wrong password!\r\n");
+                                return ;
+                            }
                             for(list<string>::iterator iter3 = iter2->users.begin(); iter3 != iter2->users.end(); iter3++)
                             {//проверка, есть ли пользователь в списке данного канала
                                 if(*iter3 == userInChan[0])
@@ -107,6 +113,11 @@ void Server::cmdJOIN(string &str, struct kevent &event) //а если неско
             {
                 if(iter2->name == chanNameLast)//проверка, если уже есть такой канал
                 {
+                    if (iter2->pass != passName)
+                    {
+                        sendAnswer(event, ":server 403 "+chanName+ ":Wrong password!\r\n");
+                        return ;
+                    }
                     for(list<string>::iterator iter3 = iter2->users.begin(); iter3 != iter2->users.end(); iter3++)
                     {//проверка, есть ли пользователь в списке данного канала
                         if(*iter3 == userInChan[0])
