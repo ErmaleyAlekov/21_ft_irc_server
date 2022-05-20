@@ -11,7 +11,7 @@ int main(int arg, char **argv)
         return 0;
     }
     int port = atoi(argv[1]);
-    Server *a = new Server("10.21.33.45", port,argv[2],4096);
+    Server *a = new Server("10.21.33.161", port,argv[2],4096);
     a[0].startServer();
     delete a;
 }

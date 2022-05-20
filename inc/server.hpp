@@ -24,6 +24,7 @@ class chatroom
 {
   public:
     list<string> users;
+    list<struct kevent> Fds;
     string pass;
     string name;
     string topic;
@@ -104,6 +105,10 @@ class Server
     void cmdPART(string &str, struct kevent &event);
     vector<string> split2(string &str);
     list<struct kevent> getListFdsByListUsers(list<string> &lst);
+    void cmdKICK(string &str, struct kevent &event);
+    int checkRoomExist(string Name);
+    void kickUserByNick(string chanName,string Nick);
+    int checkFdInRoom(chatroom &obj,struct kevent &event);
   private:
     int listen();
     int bind();

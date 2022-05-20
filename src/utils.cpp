@@ -122,8 +122,13 @@ string Server::addUserToChan(struct kevent &event, string ChanName)
 {
     string *userToChan = findNickByFd(event);
     for (vector<chatroom>::iterator iter2 = rooms.begin(); iter2 !=rooms.end(); iter2++)
+    {
         if (iter2->name == ChanName)
+        {
             iter2->users.push_back(userToChan[0]);
+            iter2->Fds.push_back(event);
+        }
+    }
     return (userToChan[0]);
 }
 
@@ -263,4 +268,44 @@ list<struct kevent> Server::getListFdsByListUsers(list<string> &lst)
         }
     }
     return res[0];
+}
+
+int Server::checkRoomExist(string Name)
+{
+    for (vector<chatroom>::iterator i = rooms.begin();i!=rooms.end();i++)
+    {
+        if (i->name == Name)
+            return 1;
+    }
+    return 0;
+}
+
+void Server::kickUserByNick(string chanName,string Nick)
+{
+    for (vector<chatroom>::iterator i = rooms.begin();i!=rooms.end();i++)
+    {
+        if (i->name == chanName)
+        {
+            list<struct kevent>::iterator it = i->Fds.begin();
+            for (list<string>::iterator j = i->users.begin();j!= i->users.end();j++,it++)
+            {
+                if (*j == Nick)
+                {
+                    i->users.erase(j);
+                    i->Fds.erase(it);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+int Server::checkFdInRoom(chatroom &obj,struct kevent &event)
+{
+    for (list<struct kevent>::iterator i = obj.Fds.begin();i!=obj.Fds.end();i++)
+    {
+        if (i->ident == event.ident)
+            return 1;
+    }
+    return 0;
 }

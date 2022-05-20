@@ -59,7 +59,10 @@ void Server::cmdJOIN(string &str, struct kevent &event) //а если неско
                                     return ;
                                 }
                                 else
+                                {
                                     iter2->users.push_back(userInChan[0]);
+                                    iter2->Fds.push_back(event);
+                                }
                                 struct kevent Fd = findFdByNick(*iter3);
                                 if (Fd.ident != event.ident)
                                     sendAnswer(Fd, ":"+userInChan[0]+"! JOIN :"+chanNameLast+ "\r\n");
@@ -307,6 +310,8 @@ void Server::cmdPRIVMSG(string &str, struct kevent &e)
         cout << "find#" << endl;
         chatroom obj = findRoomByName(nick[0]);
         list<string> lst = obj.getListUsers();
+        if (checkFdInRoom(obj,e) == 0)
+            return;
         for (list<string>::iterator i = lst.begin();i != lst.end();i++)
         {
             string *str2 = new string(":"+nick2[0]+"! PRIVMSG "+nick[0]+" "+ message[0] + "\r\n");
@@ -515,6 +520,38 @@ void Server::cmdLIST()
         cout << "-------------------------------\n";
     }
 }
+void Server::cmdKICK(string &str, struct kevent &event)
+{
+    string chanName = str.substr(str.find_first_of(' ') +1);
+    string nickToKick = chanName.substr(str.find_first_of(' ') +1);nickToKick = split(nickToKick,'\n');nickToKick = split(nickToKick,'\r');
+    chanName = split(chanName,' ');
+    if (checkRoomExist(chanName) == 1)
+    {
+        string *nick = new string("");
+        nick = findNickByFd(event);
+        if (nick[0] != "")
+        {
+            chatroom r = findRoomByName(chanName);
+            list<string>::iterator i = r.users.begin();
+            if (*i != nick[0])
+            {
+                sendAnswer(event, ":server 482 "+chanName+" :You're not channel operator\r\n");
+                return;
+            }
+            else
+            {
+                kickUserByNick(chanName,nickToKick);
+                for (list<struct kevent>::iterator it = r.Fds.begin();it != r.Fds.end();it++)
+                {
+                    sendAnswer(*it, ":"+nick[0]+"! KICK "+chanName+" "+nickToKick+" :kick message\r\n");
+                    // sendAnswer(*it, ":"+nickToKick+"! PART "+chanName+"\r\n");
+                }
+            }
+        }
+    }
+    else
+        sendAnswer(event,":server 403 "+chanName+ " :No such channel\r\n");
+}
 void Server::cmdPART(string &str, struct kevent &event)
 {
     string *chanNames = new string(""); string *nick = findNickByFd(event);
@@ -546,8 +583,10 @@ void Server::cmdPART(string &str, struct kevent &event)
                             {
                                 struct kevent s = *it4;
                                 cout << "send\n";
-                                sendAnswer(s, ":"+nick[0]+"! PART "+*i);
-                                sendAnswer(s, ":"+nick[0]+"! MODE "+*i+" +o "+*it->users.begin());
+                                cout << "nick[0]: "<< nick[0] << endl;
+                                cout << *i << endl;
+                                sendAnswer(s, ":"+nick[0]+"! PART "+*i+"\r\n");
+                                sendAnswer(s, ":"+nick[0]+"! MODE "+*i+" +o "+*it->users.begin()+"\r\n");
                             }
                         }
                     }
@@ -596,6 +635,8 @@ int Server::parsBuffer(string &str, struct kevent &event)
         cmdNOTICE(str,event);
     if (Find(str, "ISON") == 0)
         cmdISON(str,event);
+    if (Find(str,"KICK") == 0)
+        cmdKICK(str,event);
     if (Find(str,"PART") == 0)
         cmdPART(str,event);
     if (Find(str,"WHOIS") == 0)
