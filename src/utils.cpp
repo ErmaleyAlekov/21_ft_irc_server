@@ -243,33 +243,6 @@ vector<string> Server::split2(string &str)
     return v[0];
 }
 
-list<struct kevent> Server::getListFdsByListUsers(list<string> &lst)
-{
-    list<struct kevent> *res = new list<struct kevent>;int k = 0;
-    list<struct kevent>::iterator it3 = fds.begin();
-    for (list<string>::iterator it = lst.begin();it != lst.end();it++)
-    {
-        for (list<string>::iterator it2 = users.begin();it2!=users.end();it2++)
-        {
-            if (*it == *it2)
-            {
-                for (int i = 0;i <=k;it3++,i++)
-                {
-                    if (i==k)
-                    {
-                        k = 0;
-                        res[0].push_back(*it3);
-                        it3 = fds.begin();
-                        break;
-                    }
-                }             
-            }
-            k++;
-        }
-    }
-    return res[0];
-}
-
 int Server::checkRoomExist(string Name)
 {
     for (vector<chatroom>::iterator i = rooms.begin();i!=rooms.end();i++)

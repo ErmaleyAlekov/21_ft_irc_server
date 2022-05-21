@@ -551,11 +551,15 @@ void Server::cmdKICK(string &str, struct kevent &event)
             }
             else
             {
-                kickUserByNick(chanName,nickToKick);
-                for (list<struct kevent>::iterator it = r.Fds.begin();it != r.Fds.end();it++)
+                vector<string> n = split2(nickToKick);
+                for (size_t i = 0;i<n.size();i++)
                 {
-                    sendAnswer(*it, ":"+nick[0]+"! KICK "+chanName+" "+nickToKick+" :kick message\r\n");
-                    // sendAnswer(*it, ":"+nickToKick+"! PART "+chanName+"\r\n");
+                    kickUserByNick(chanName,n[i]);
+                    for (list<struct kevent>::iterator it = r.Fds.begin();it != r.Fds.end();it++)
+                    {
+                        sendAnswer(*it, ":"+nick[0]+"! KICK "+chanName+" "+n[i]+" :\r\n");
+                        // sendAnswer(*it, ":"+nickToKick+"! PART "+chanName+"\r\n");
+                    }
                 }
             }
         }
@@ -570,24 +574,24 @@ void Server::cmdPART(string &str, struct kevent &event)
     vector<string> names = split2(chanNames[0]);
     cout << "v.s " << names.size() << endl;
     cout << names[0] << endl;cout << event.ident << endl;
-    list<struct kevent> FDS;
+    
     // cout << chanNames[0] << ": "<< chanNames[0].size() << endl;cout << nick[0] << endl;
     for (vector<string>::iterator i = names.begin();i!=names.end();i++)
     {
         for (vector<chatroom>::iterator it = rooms.begin();it!=rooms.end();it++)
         {
-            FDS = getListFdsByListUsers(it->users);
-            cout << "fds.s " << FDS.size() << endl;
             if (*i == it->name)
             {
+                list<struct kevent>::iterator FDS = it->Fds.begin();
                 cout << "=\n";
-                for (list<string>::iterator j = it->users.begin();j!= it->users.end();j++)
+                for (list<string>::iterator j = it->users.begin();j!= it->users.end();j++,FDS++)
                 {
                     if (*j == nick[0])
                     {
                         cout << "=2\n";
                         it->users.erase(j);
-                        for (list<struct kevent>::iterator it4 = FDS.begin();it4!=FDS.end();it4++)
+                        it->Fds.erase(FDS);
+                        for (list<struct kevent>::iterator it4 = it->Fds.begin();it4!=it->Fds.end();it4++)
                         {
                             cout << "fd: " << it4->ident << endl;
                             if (it4->ident != event.ident)
@@ -600,6 +604,7 @@ void Server::cmdPART(string &str, struct kevent &event)
                                 sendAnswer(s, ":"+nick[0]+"! MODE "+*i+" +o "+*it->users.begin()+"\r\n");
                             }
                         }
+                        break;
                     }
                 }
             }
