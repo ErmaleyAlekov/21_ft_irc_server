@@ -16,6 +16,7 @@
 #include <vector>
 #include <list>
 #include <signal.h>
+#include <limits.h>
 using namespace std;
 #define ERROR ":server 433 Nickname is already in use\r\n"
 #define SUCCESSCONNECT ":server 376 "
@@ -120,8 +121,8 @@ class Server
     int m_backlog;
     int m_kqueue;
     struct kevent m_event_subs;
-    struct kevent m_event_list[1024];
-    char m_receive_buf[1024];
+    struct kevent m_event_list[USHRT_MAX];
+    char m_receive_buf[USHRT_MAX*3];
     list<string> users;
     list<uintptr_t> fds;
     list<uintptr_t> auth;
