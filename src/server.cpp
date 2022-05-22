@@ -199,8 +199,6 @@ void Server::onRead(struct kevent& event)
 			strerror(errno));
 		return;
 	}
-    // Сюда надо будет вставить обработчик сокетов.
-    // Печатаю информацию из сокета полученного от клиента.
 	m_receive_buf[bytes_read] = '\0';
 	sockstr = m_receive_buf;
 	parsBuffer(sockstr, event);
