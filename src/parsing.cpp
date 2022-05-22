@@ -81,8 +81,8 @@ void Server::cmdJOIN(string &str, struct kevent &event) //а если неско
                         sendAnswer(event, ":server 403 "+chanCheck+ ":No such channel\r\n");
                         return ;
                     }
-                    chatroom a(chanCheck, "");
-                    rooms.push_back(a);
+                    chatroom *a = new chatroom(chanCheck, "");
+                    rooms.push_back(a[0]);
                     string userToChan = addUserToChan(event, chanCheck);
                     if(rooms[rooms.size()-1].topic == "")//дописать ф-ю вывода списка юзеров в данном канале
                     {
@@ -153,9 +153,9 @@ void Server::cmdJOIN(string &str, struct kevent &event) //а если неско
                     cout << *iterat << endl;
                 cout << "1" << endl;
             }
-            chatroom b(chanNameLast, "");
+            chatroom *b = new chatroom(chanNameLast, "");
             if (checkChan == 0)
-                rooms.push_back(b);
+                rooms.push_back(b[0]);
             string userToChan = addUserToChan(event, chanNameLast);
             if(rooms[rooms.size()-1].topic == "")
             {
