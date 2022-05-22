@@ -1,7 +1,6 @@
 #include "server.hpp"
 #include <iostream>
 #include <time.h>
-#include <thread>
 using namespace std;
 // Основной конструктор класса, в качестве параметров принимает ip, port, и максимальную длину очереди ожидающих соединений.
 Server::Server(const char *addr, int port,string pass, int backlog) :
