@@ -176,7 +176,7 @@ int Server::onClientConnect(uintptr_t& event)
 int Server::onClientDisconnect(uintptr_t& event)
 {
     // Функция очищает структуру событий и закрывает конект.
-	DEBUG("[0x%016" PRIXPTR "] client disconnect", event.ident);
+	DEBUG("[0x%016" PRIXPTR "] client disconnect", event);
 	EV_SET(&m_event_subs, event, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 	int err = kevent(m_kqueue, &m_event_subs, 1, NULL, 0, NULL);
 	if (err < 0)
@@ -186,16 +186,16 @@ int Server::onClientDisconnect(uintptr_t& event)
 
 int Server::onRead(uintptr_t& event)
 {
-	DEBUG("[0x%016" PRIXPTR "] client read", event.ident);
+	DEBUG("[0x%016" PRIXPTR "] client read", event);
     // Функция recv служит для чтения данных из сокета.
     // Первый аргумент - сокет-дескриптор,
     // Второй и третий аргументы - адрес и длина буфера для записи читаемых данных, 
     // Четвертый параметр - это комбинация битовых флагов, управляющих режимами чтения.
 	int bytes_read = recv(event, m_receive_buf, 
-		sizeof(m_receive_buf) - 1, 0);
+		sizeof(m_receive_buf), 0);
 	if (bytes_read <= 0)
 	{
-		ERR("[0x%016" PRIXPTR "] client receive: %s", event.ident, 
+		ERR("[0x%016" PRIXPTR "] client receive: %s", event, 
 			strerror(errno));
 		return EV_ERROR;
 	}
