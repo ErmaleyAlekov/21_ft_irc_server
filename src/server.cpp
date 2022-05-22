@@ -97,10 +97,10 @@ void Server::signals()
 
 void Server::checkConnects()
 {
-	for (list<struct kevent>::iterator it = auth.begin();it!=auth.end();it++)
+	for (list<uintptr_t>::iterator it = auth.begin();it!=auth.end();it++)
 	{
 		unsigned char buf;
-		if (recv(it->ident, &buf, 1, MSG_PEEK | MSG_DONTWAIT) == 0)
+		if (recv(*it, &buf, 1, MSG_PEEK | MSG_DONTWAIT) == 0)
 		{
 			printf("Disconnect detected!\n");
 			cmdQUIT(*it);
@@ -173,15 +173,15 @@ int Server::onClientConnect(struct kevent& event)
 	return err;
 }
 
-int Server::onClientDisconnect(struct kevent& event)
+int Server::onClientDisconnect(uintptr_t& event)
 {
     // Функция очищает структуру событий и закрывает конект.
 	DEBUG("[0x%016" PRIXPTR "] client disconnect", event.ident);
-	EV_SET(&m_event_subs, event.ident, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+	EV_SET(&m_event_subs, event, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 	int err = kevent(m_kqueue, &m_event_subs, 1, NULL, 0, NULL);
 	if (err < 0)
-		ERR("[0x%016" PRIXPTR "] kqueue unsub", event.ident);
-	return ::close(event.ident);
+		ERR("[0x%016" PRIXPTR "] kqueue unsub", event);
+	return ::close(event);
 }
 
 void Server::onRead(struct kevent& event)
@@ -225,8 +225,8 @@ int Server::close()
 
 Server::~Server() {if (m_sock_state == LISTENING) close();}
 
-ssize_t Server::sendAnswer(struct kevent &event, string str)
+ssize_t Server::sendAnswer(uintptr_t &event, string str)
 {
-	ssize_t ret = send(event.ident, str.c_str(), str.size(), 0);
+	ssize_t ret = send(event, str.c_str(), str.size(), 0);
 	return ret;
 }

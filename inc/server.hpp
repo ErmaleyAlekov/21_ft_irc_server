@@ -24,7 +24,7 @@ class chatroom
 {
   public:
     list<string> users;
-    list<struct kevent> Fds;
+    list<uintptr_t> Fds;
     string pass;
     string name;
     string topic;
@@ -71,15 +71,15 @@ class Server
     void onRead(struct kevent& event);
     void onEOF();
     int onClientConnect(struct kevent& event);
-    int onClientDisconnect(struct kevent& event);
+    int onClientDisconnect(uintptr_t& event);
     void startServer();
     int parsBuffer(string &str, struct kevent &event);
     int cmdNICK(string &str, int n, struct kevent &event);
     int checkClient(string str);
     int Find(string str);
     int Find(string &str, string str2);
-    ssize_t sendAnswer(struct kevent &event, string str);
-    void cmdQUIT(struct kevent &event);
+    ssize_t sendAnswer(uintptr_t &event, string str);
+    void cmdQUIT(uintptr_t &event);
     void cmdPRIVMSG(string &str, struct kevent &e);
     int cmdPASS(string &str, struct kevent &e);
     void cmdWHOIS(string &str, struct kevent &e);
@@ -99,12 +99,11 @@ class Server
     void userAlreadyInChan(string chanCheck, struct kevent &event);
     string *findNickByFd(struct kevent &event);
     chatroom findRoomByName(string Name);
-    struct kevent& findFdByNick(string Nick);
+    uintptr_t& findFdByNick(string Nick);
     void marussia(string Nick,string Message,struct kevent &event);
     int checkUserNick(string &name);
     void cmdPART(string &str, struct kevent &event);
     vector<string> split2(string &str);
-    list<struct kevent> getListFdsByListUsers(list<string> &lst);
     void cmdKICK(string &str, struct kevent &event);
     int checkRoomExist(string Name);
     void kickUserByNick(string chanName,string Nick);
@@ -124,8 +123,8 @@ class Server
     struct kevent m_event_list[1024];
     char m_receive_buf[1024];
     list<string> users;
-    list<struct kevent> fds;
-    list<struct kevent> auth;
+    list<uintptr_t> fds;
+    list<uintptr_t> auth;
     vector<chatroom> rooms;
     string sockstr;
     string serverpassword;

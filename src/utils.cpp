@@ -113,7 +113,7 @@ void Server::chanPassNum(string chanName, string passName, struct kevent &event)
     size_t pass_number = k + 1;
     if (pass_number > chan_number)
     {
-        sendAnswer(event, ":server 464 :Password incorrect\r\n");
+        sendAnswer(event.ident, ":server 464 :Password incorrect\r\n");
         return ;
     }
 }
@@ -126,7 +126,7 @@ string Server::addUserToChan(struct kevent &event, string ChanName)
         if (iter2->name == ChanName)
         {
             iter2->users.push_back(userToChan[0]);
-            iter2->Fds.push_back(event);
+            iter2->Fds.push_back(event.ident);
         }
     }
     return (userToChan[0]);
@@ -139,9 +139,9 @@ void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
         if(iter2->name == chanCheck)//проверка, если уже есть такой канал
         {
             unsigned long p = 0;
-            for (list<struct kevent>::iterator q = fds.begin(); q != fds.end();q++)//поиск текущего пользователя
+            for (list<uintptr_t>::iterator q = fds.begin(); q != fds.end();q++)//поиск текущего пользователя
             {
-                if (q->ident == event.ident)
+                if (*q == event.ident)
                     break;
                 p++;
             }
@@ -156,7 +156,7 @@ void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
             {//проверка, есть ли пользователь в списке данного канала
                 if(*iter3 == userInChan)
                 {
-                    sendAnswer(event, ":server 443 "+chanCheck+" "+userInChan+" :is already on channel\r\n");
+                    sendAnswer(event.ident, ":server 443 "+chanCheck+" "+userInChan+" :is already on channel\r\n");
                     return ;
                 }
                 else
@@ -170,9 +170,9 @@ string *Server::findNickByFd(struct kevent &e)
 {
     unsigned long a = 0;string *nick = new string("");
     list<string>::iterator it = users.begin();
-    for (list<struct kevent>::iterator i = fds.begin();i != fds.end();i++)
+    for (list<uintptr_t>::iterator i = fds.begin();i != fds.end();i++)
     {
-        if (i->ident == e.ident)
+        if (*i == e.ident)
             break;
         a++;
     }
@@ -197,9 +197,9 @@ chatroom Server::findRoomByName(string Name)
     return *rooms.end();
 }
 
-struct kevent& Server::findFdByNick(string Nick)
+uintptr_t& Server::findFdByNick(string Nick)
 {
-    int j = 0;list<struct kevent>::iterator it2 = fds.begin();
+    int j = 0;list<uintptr_t>::iterator it2 = fds.begin();
     for (list<string>::iterator it = users.begin();it!=users.end();it++)
     {
         if (*it == Nick)
@@ -259,7 +259,7 @@ void Server::kickUserByNick(string chanName,string Nick)
     {
         if (i->name == chanName)
         {
-            list<struct kevent>::iterator it = i->Fds.begin();
+            list<uintptr_t>::iterator it = i->Fds.begin();
             for (list<string>::iterator j = i->users.begin();j!= i->users.end();j++,it++)
             {
                 if (*j == Nick)
@@ -275,9 +275,9 @@ void Server::kickUserByNick(string chanName,string Nick)
 
 int Server::checkFdInRoom(chatroom &obj,struct kevent &event)
 {
-    for (list<struct kevent>::iterator i = obj.Fds.begin();i!=obj.Fds.end();i++)
+    for (list<uintptr_t>::iterator i = obj.Fds.begin();i!=obj.Fds.end();i++)
     {
-        if (i->ident == event.ident)
+        if (*i == event.ident)
             return 1;
     }
     return 0;
