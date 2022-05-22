@@ -113,7 +113,7 @@ void Server::startServer()
     // функция запуска сервера
 	int event_count = 0;
 	int event_iter = 0;
-	struct kevent curr_event;
+	struct kevent *curr_event = new struct kevent;
 	if (initServer() < 0 && m_sock_state == LISTENING)
 	{
 		ERR("aborting run loop");
@@ -131,14 +131,14 @@ void Server::startServer()
 		}
 		for (event_iter = 0; event_iter < event_count; event_iter++)
 		{
-			curr_event = m_event_list[event_iter];
-			if (curr_event.ident == m_sock)
-				onClientConnect(curr_event);
+			curr_event[0] = m_event_list[event_iter];
+			if (curr_event[0].ident == m_sock)
+				onClientConnect(curr_event[0]);
 			else
 			{
-				if (curr_event.flags & EVFILT_READ) 
-					onRead(curr_event);
-				if (curr_event.flags & EV_EOF)
+				if (curr_event[0].flags & EVFILT_READ) 
+					onRead(curr_event[0]);
+				if (curr_event[0].flags & EV_EOF)
 					onEOF();
 			}
 		}
