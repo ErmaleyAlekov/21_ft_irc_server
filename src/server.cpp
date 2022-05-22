@@ -133,11 +133,11 @@ void Server::startServer()
 		{
 			curr_event[0] = m_event_list[event_iter];
 			if (curr_event[0].ident == m_sock)
-				onClientConnect(curr_event[0]);
+				onClientConnect(curr_event[0].ident);
 			else
 			{
 				if (curr_event[0].flags & EVFILT_READ) 
-					onRead(curr_event[0]);
+					curr_event[0].flags |= onRead(curr_event[0].ident);
 				if (curr_event[0].flags & EV_EOF)
 					onEOF();
 			}
@@ -145,7 +145,7 @@ void Server::startServer()
 	}
 }
 
-int Server::onClientConnect(struct kevent& event)
+int Server::onClientConnect(uintptr_t& event)
 {
     /*Функция accept используется с сокетами, 
     ориентированными на устанавление соединения (SOCK_STREAM, SOCK_SEQPACKET и SOCK_RDM).
@@ -155,12 +155,12 @@ int Server::onClientConnect(struct kevent& event)
     Новый сокет более не находится в слушающем состоянии. Исходный сокет s не изменяется при этом вызове.
     Заметим, что флаги файловых дескрипторов (те, что можно установить с помощью параметра F_SETFL функции fcntl, 
     типа неблокированного состояния или асинхронного ввода-вывода) не наследуются новым файловым дескриптором после accept.*/
-	int client_sock = ::accept(event.ident, NULL, NULL);
+	int client_sock = ::accept(event, NULL, NULL);
 	printf("NEW CONNECTION!\n");
 	DEBUG("[0x%016" PRIXPTR "] client connect", (unsigned long) client_sock);
 	if (client_sock < 0)
 	{
-		ERR("[0x%016" PRIXPTR "] client connect: %s", event.ident, 
+		ERR("[0x%016" PRIXPTR "] client connect: %s", event, 
 			strerror(errno));
 	}
 	fcntl(client_sock, F_SETFL, O_NONBLOCK);
@@ -168,7 +168,7 @@ int Server::onClientConnect(struct kevent& event)
 	int err = kevent(m_kqueue, &m_event_subs, 1, NULL, 0, NULL);
 	if (err < 0)
 	{
-		ERR("[0x%016" PRIXPTR  "] sub: %s", event.ident, strerror(errno));
+		ERR("[0x%016" PRIXPTR  "] sub: %s", event, strerror(errno));
 	}
 	return err;
 }
@@ -184,20 +184,20 @@ int Server::onClientDisconnect(uintptr_t& event)
 	return ::close(event);
 }
 
-void Server::onRead(struct kevent& event)
+int Server::onRead(uintptr_t& event)
 {
 	DEBUG("[0x%016" PRIXPTR "] client read", event.ident);
     // Функция recv служит для чтения данных из сокета.
     // Первый аргумент - сокет-дескриптор,
     // Второй и третий аргументы - адрес и длина буфера для записи читаемых данных, 
     // Четвертый параметр - это комбинация битовых флагов, управляющих режимами чтения.
-	int bytes_read = recv(event.ident, m_receive_buf, 
+	int bytes_read = recv(event, m_receive_buf, 
 		sizeof(m_receive_buf) - 1, 0);
 	if (bytes_read <= 0)
 	{
 		ERR("[0x%016" PRIXPTR "] client receive: %s", event.ident, 
 			strerror(errno));
-		return;
+		return EV_ERROR;
 	}
 	m_receive_buf[bytes_read] = '\0';
 	sockstr = m_receive_buf;
@@ -206,7 +206,7 @@ void Server::onRead(struct kevent& event)
 	cout << sockstr;
 	cout << "-------------------------------"<< endl;
 	DEBUG("%s", m_receive_buf);
-	event.flags |= EV_EOF;
+	return EV_EOF;
 }
 
 void Server::onEOF()

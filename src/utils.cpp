@@ -95,7 +95,7 @@ int Server::channelNameCheck(string str)
     return 0;
 }
 
-void Server::chanPassNum(string chanName, string passName, struct kevent &event)
+void Server::chanPassNum(string chanName, string passName, uintptr_t &event)
 {
     size_t j = 0;
     for (size_t i = 0; i < chanName.size(); i++)
@@ -113,12 +113,12 @@ void Server::chanPassNum(string chanName, string passName, struct kevent &event)
     size_t pass_number = k + 1;
     if (pass_number > chan_number)
     {
-        sendAnswer(event.ident, ":server 464 :Password incorrect\r\n");
+        sendAnswer(event, ":server 464 :Password incorrect\r\n");
         return ;
     }
 }
 
-string Server::addUserToChan(struct kevent &event, string ChanName)
+string Server::addUserToChan(uintptr_t &event, string ChanName)
 {
     string *userToChan = findNickByFd(event);
     for (vector<chatroom>::iterator iter2 = rooms.begin(); iter2 !=rooms.end(); iter2++)
@@ -126,13 +126,13 @@ string Server::addUserToChan(struct kevent &event, string ChanName)
         if (iter2->name == ChanName)
         {
             iter2->users.push_back(userToChan[0]);
-            iter2->Fds.push_back(event.ident);
+            iter2->Fds.push_back(event);
         }
     }
     return (userToChan[0]);
 }
 
-void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
+void Server::userAlreadyInChan(string chanCheck, uintptr_t &event)
 {
     for(vector<chatroom>::iterator iter2 = rooms.begin(); iter2 !=rooms.end(); iter2++)
     {
@@ -141,7 +141,7 @@ void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
             unsigned long p = 0;
             for (list<uintptr_t>::iterator q = fds.begin(); q != fds.end();q++)//поиск текущего пользователя
             {
-                if (*q == event.ident)
+                if (*q == event)
                     break;
                 p++;
             }
@@ -156,7 +156,7 @@ void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
             {//проверка, есть ли пользователь в списке данного канала
                 if(*iter3 == userInChan)
                 {
-                    sendAnswer(event.ident, ":server 443 "+chanCheck+" "+userInChan+" :is already on channel\r\n");
+                    sendAnswer(event, ":server 443 "+chanCheck+" "+userInChan+" :is already on channel\r\n");
                     return ;
                 }
                 else
@@ -166,13 +166,13 @@ void Server::userAlreadyInChan(string chanCheck, struct kevent &event)
     }
 }
 
-string *Server::findNickByFd(struct kevent &e)
+string *Server::findNickByFd(uintptr_t &e)
 {
     unsigned long a = 0;string *nick = new string("");
     list<string>::iterator it = users.begin();
     for (list<uintptr_t>::iterator i = fds.begin();i != fds.end();i++)
     {
-        if (*i == e.ident)
+        if (*i == e)
             break;
         a++;
     }
@@ -273,11 +273,11 @@ void Server::kickUserByNick(string chanName,string Nick)
     }
 }
 
-int Server::checkFdInRoom(chatroom &obj,struct kevent &event)
+int Server::checkFdInRoom(chatroom &obj,uintptr_t &event)
 {
     for (list<uintptr_t>::iterator i = obj.Fds.begin();i!=obj.Fds.end();i++)
     {
-        if (*i == event.ident)
+        if (*i == event)
             return 1;
     }
     return 0;
